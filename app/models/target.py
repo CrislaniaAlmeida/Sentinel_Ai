@@ -37,3 +37,4 @@ class Veiculo(Base):
         Enum(RestricaoStatus), default=RestricaoStatus.NAO_VERIFICADO
     )
     criado_em: Mapped[datetime] = mapped_column(default=datetime.utcnow)
+    

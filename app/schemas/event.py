@@ -27,4 +27,3 @@ class BuscaInvestigacaoRequest(BaseModel):
 class BuscaInvestigacaoResponse(BaseModel):
     resultado: list[EventoOut]
     total: int 
-    
