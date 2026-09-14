@@ -21,7 +21,7 @@ def get_current_user(
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        payload = decode_acess_token(token)
+        payload = decode_access_token(token)
         user_id: str = payload.get("sub")
         if user_id is None:
             raise credentials_exception

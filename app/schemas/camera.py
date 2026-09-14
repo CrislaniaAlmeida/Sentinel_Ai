@@ -9,7 +9,7 @@ class CameraCreate(BaseModel):
     local_instalacao: str | None = None
     latitude: float | None = None
     longitude: float | None = None
-    stsp_url: str
+    rtsp_url: str
 
 class CameraOut(BaseModel):
     id: uuid.UUID
