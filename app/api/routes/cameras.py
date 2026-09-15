@@ -1,10 +1,11 @@
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
+from app.core.audit import registrar_auditoria
 from app.db.session import get_db
 from app.models.camera import Camera
 from app.models.user import User
@@ -24,6 +25,7 @@ def listar_cameras(
 @router.post("", response_model=CameraOut, status_code=status.HTTP_201_CREATED)
 def criar_camera(
     dados: CameraCreate,
+    request: Request,
     db: Annotated[Session, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_user)],
 ) -> Camera:
@@ -31,6 +33,9 @@ def criar_camera(
     db.add(nova_camera)
     db.commit()
     db.refresh(nova_camera)
+
+    registrar_auditoria(db, current_user, "criar_camera", request, entidade_afetada=str(nova_camera.id))
+
     return nova_camera
 
 

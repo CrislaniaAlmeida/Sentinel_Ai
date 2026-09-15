@@ -1,9 +1,10 @@
-from typing import Annotated 
+from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
+from app.core.audit import registrar_auditoria
 from app.core.security import create_access_token, verify_password
 from app.db.session import get_db
 from app.models.user import User
@@ -11,9 +12,11 @@ from app.schemas.auth import LoginRequest, TokenResponse, UserOut
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
+
 @router.post("/login", response_model=TokenResponse)
 def login(
     dados: LoginRequest,
+    request: Request,
     db: Annotated[Session, Depends(get_db)],
 ) -> TokenResponse:
     credentials_exception = HTTPException(
@@ -29,12 +32,16 @@ def login(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Conta desativada",
         )
-    
+
     token = create_access_token(
         subject=str(usuario.id),
         extra_claims={"papel": usuario.papel.value, "tenant_id": str(usuario.tenant_id)},
     )
+
+    registrar_auditoria(db, usuario, "login", request)
+
     return TokenResponse(access_token=token)
+
 
 @router.get("/me", response_model=UserOut)
 def eu(
