@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import auth, cameras
+from app.api.routes import auth, cameras, investigations
 from app.core.config import settings
 
 app = FastAPI(title=settings.PROJECT_NAME)
@@ -29,6 +29,7 @@ def health_check():
 
 app.include_router(auth.router)
 app.include_router(cameras.router)
+app.include_router(investigations.router)
 
 #As demais rotas (eventos, investigações, relatórios, auditoria)
 #Serão incluídas aqui conforme forem criadas em app/api/routes

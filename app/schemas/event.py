@@ -25,5 +25,5 @@ class BuscaInvestigacaoRequest(BaseModel):
     cameras: list[str] | None = None
 
 class BuscaInvestigacaoResponse(BaseModel):
-    resultado: list[EventoOut]
+    resultados: list[EventoOut]
     total: int 
