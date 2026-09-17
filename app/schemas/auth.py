@@ -15,7 +15,7 @@ class TokenResponse(BaseModel):
 class UserOut(BaseModel):
     id: uuid.UUID
     nome: str
-    email: EmailSrt
+    email: EmailStr
     papel: UserRole
     ativo: bool
 

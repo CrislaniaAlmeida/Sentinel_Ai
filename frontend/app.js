@@ -832,15 +832,78 @@ function initSidebar(){
   });
 }
 
+const API_URL = 'http://localhost:8000';
+let authToken = null;
+
+async function fazerLogin(email, senha){
+  const resposta = await fetch(`${API_URL}/api/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, senha }),
+  });
+  if (!resposta.ok) {
+    throw new Error('Credenciais inválidas');
+  }
+  const dados = await resposta.json();
+  return dados.access_token;
+}
+
+async function buscarUsuarioLogado(token){
+  const resposta = await fetch(`${API_URL}/api/auth/me`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!resposta.ok) return null;
+  return resposta.json();
+}
+
+function iniciais(nome){
+  return nome.split(' ').filter(Boolean).slice(0, 2).map(p => p[0].toUpperCase()).join('');
+}
+
+function atualizarInterfaceUsuario(usuario){
+  const nome = usuario ? usuario.nome : 'Mariana Lania';
+  const papel = usuario ? usuario.papel : 'Operadora de Segurança';
+  const sigla = iniciais(nome);
+
+  document.getElementById('sidebar-username').textContent = nome;
+  document.getElementById('sidebar-role').textContent = papel;
+  document.getElementById('sidebar-avatar').textContent = sigla;
+  document.getElementById('topbar-avatar').textContent = sigla;
+  document.getElementById('topbar-avatar').title = nome;
+}
+
 function initLogin(){
   const form = document.getElementById('login-form');
-  const enter = ()=>{
+  const botao = document.getElementById('demo-enter-btn');
+
+  const entrar = ()=>{
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('app-shell').style.display = 'flex';
     render();
   };
-  form.addEventListener('submit', e=>{ e.preventDefault(); enter(); });
-  document.getElementById('demo-enter-btn').addEventListener('click', enter);
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const email = document.getElementById('login-user').value.trim();
+    const senha = document.getElementById('login-pass').value.trim();
+    const textoOriginal = botao.textContent;
+    botao.textContent = 'Verificando...';
+    botao.disabled = true;
+
+    try {
+      const token = await fazerLogin(email, senha);
+      authToken = token;
+      const usuario = await buscarUsuarioLogado(token);
+      atualizarInterfaceUsuario(usuario);
+      entrar();
+    } catch (erro) {
+      alert('E-mail ou senha inválidos.');
+    } finally {
+      botao.textContent = textoOriginal;
+      botao.disabled = false;
+    }
+  });
 }
 
 document.addEventListener('DOMContentLoaded', ()=>{
