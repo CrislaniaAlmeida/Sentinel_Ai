@@ -832,7 +832,7 @@ function initSidebar(){
   });
 }
 
-const API_URL = 'http://localhost:8000';
+const API_URL = 'https://sentinelai-production-edf2.up.railway.app';
 let authToken = null;
 
 async function fazerLogin(email, senha){
