@@ -3,7 +3,7 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
-class LogAugitoriaOut(BaseModel):
+class LogAuditoriaOut(BaseModel):
     id: uuid.UUID
     usuario_id: uuid.UUID
     acao: str 
