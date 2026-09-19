@@ -6,13 +6,15 @@ from app.core.config import settings
 
 app = FastAPI(title=settings.PROJECT_NAME)
 
-#Origens autorizadas a chamar essa API a partir do navegador 
-#Inclui o prototipo de front-end no Lovable, usado para validar as telas
-#antes das rotas reais existirem, e o localhost para o desenvolvimento 
+# Origens autorizadas a chamar essa API a partir do navegador
+# Inclui o prototipo de front-end no Lovable, usado para validar as telas
+# antes das rotas reais existirem, o localhost para desenvolvimento local,
+# e o front-end publicado no Netlify (producao)
 origins = [
-    "https>//front-prototypes-love.lovable.app",
-    "http://localhost:5173",     #porta padrão do Vite em desenvolvimento local
-    "http://localhost:8080",     #porta usada pelo prototipo local (TanStack Start)
+    "https://front-prototypes-love.lovable.app",
+    "http://localhost:5173",
+    "http://localhost:8080",
+    "https://lustrous-axolotl-52b80e.netlify.app",
 ]
 
 app.add_middleware(
@@ -31,6 +33,6 @@ app.include_router(auth.router)
 app.include_router(cameras.router)
 app.include_router(investigations.router)
 
-#As demais rotas (eventos, investigações, relatórios, auditoria)
-#Serão incluídas aqui conforme forem criadas em app/api/routes
-#seguindo o mesmo padrão: from app.api.routes import X; app.include_router(X.router)
+# As demais rotas (eventos, relatorios, auditoria)
+# Serao incluidas aqui conforme forem criadas em app/api/routes
+# seguindo o mesmo padrao: from app.api.routes import X; app.include_router(X.router)
