@@ -39,6 +39,5 @@ def require_admin(
     if current_user.papel != UserRole.ADMINISTRADOR:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Ação restrita a adminitradores.",
-        )
+            detail="Ação restrita a administradores",        )
     return current_user

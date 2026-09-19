@@ -21,3 +21,9 @@ class UserOut(BaseModel):
 
 class Config:
     from_attributes = True
+
+class UserCreate(BaseModel):
+    nome: str
+    email: EmailStr
+    senha: str
+    papel: UserRole = UserRole.OPERADOR
