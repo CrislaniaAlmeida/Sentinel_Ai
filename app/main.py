@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import audit, auth, cameras, investigations, users
+from app.api.routes import audit, auth, cameras, investigations, reports, users
 from app.core.config import settings
 
 app = FastAPI(title=settings.PROJECT_NAME)
@@ -29,8 +29,5 @@ app.include_router(audit.router)
 app.include_router(auth.router)
 app.include_router(cameras.router)
 app.include_router(investigations.router)
+app.include_router(reports.router)
 app.include_router(users.router)
-
-# As demais rotas (eventos, relatorios)
-# Serao incluidas aqui conforme forem criadas em app/api/routes
-# seguindo o mesmo padrao: from app.api.routes import X; app.include_router(X.router)

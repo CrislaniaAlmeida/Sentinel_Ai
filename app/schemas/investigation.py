@@ -20,6 +20,7 @@ class RelatorioCreate(BaseModel):
     investigacao_id: uuid.UUID
 
 class RelatorioOut(BaseModel):
+    id: uuid.UUID
     investigacao_id: uuid.UUID
     pdf_url: str | None
     gerado_em: datetime
