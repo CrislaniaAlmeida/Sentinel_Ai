@@ -1,7 +1,7 @@
 /* ============================================================
    SENTINEL AI — application logic
-   Static front-end demo. All camera feeds are generative
-   placeholders (gradients + silhouettes), not real video.
+   Static front-end demo. Camera feeds are still frames
+   (AI-generated, fictional mall) or gradient placeholders — not real video.
    ============================================================ */
 
 /* ---------------- helpers ---------------- */
@@ -16,23 +16,26 @@ function confNote(c){ return c>=0.9 ? 'Alta correspondência visual' : c>=0.8 ? 
 function esc(s){ return String(s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 
 const SCENE_GRADIENT = {
-  gate:      'linear-gradient(160deg,#0d1e2c,#050a10 75%)',
-  parking:   'linear-gradient(160deg,#12161f,#050608 75%)',
-  corridor:  'linear-gradient(160deg,#1b1710,#07060a 75%)',
   entrance:  'linear-gradient(160deg,#0d1f1c,#06090c 75%)',
-  perimeter: 'linear-gradient(160deg,#0e1c14,#06090a 75%)',
-  loading:   'linear-gradient(160deg,#1e1710,#08090c 75%)',
+  corridor:  'linear-gradient(160deg,#1b1710,#07060a 75%)',
+  foodcourt: 'linear-gradient(160deg,#1e1710,#08090c 75%)',
+  parking:   'linear-gradient(160deg,#12161f,#050608 75%)',
+  service:   'linear-gradient(160deg,#0e1c14,#06090a 75%)',
 };
-const SCENE_ICON = { gate:'car', parking:'car', corridor:'walk', entrance:'walk', perimeter:'walk', loading:'car' };
-const SCENE_CLASS_LABEL = { gate:'VEÍCULO', parking:'VEÍCULO', corridor:'PESSOA', entrance:'PESSOA', perimeter:'PESSOA', loading:'VEÍCULO' };
+const SCENE_ICON = { entrance:'walk', corridor:'walk', foodcourt:'walk', parking:'car', service:'walk' };
+const SCENE_CLASS_LABEL = { entrance:'PESSOA', corridor:'PESSOA', foodcourt:'PESSOA', parking:'VEÍCULO', service:'PESSOA' };
 
 function sceneFeedHTML(cam, seed){
+  // Câmera com imagem: mostra o quadro "gravado" (foto) em vez do gradiente
+  if(cam.img){
+    return `<div class="scene" style="position:absolute;inset:0;background:#05080c url('${cam.img}') center/cover no-repeat"></div>`;
+  }
   const grad = SCENE_GRADIENT[cam.scene] || SCENE_GRADIENT.corridor;
   const left = 18 + seededPct(seed,'l')*54;
   const top  = 30 + seededPct(seed,'t')*38;
   const ic = SCENE_ICON[cam.scene] || 'walk';
   const size = 30 + seededPct(seed,'s')*22;
-  return `<div class="scene" style="background:${grad}">
+  return `<div class="scene" style="position:absolute;inset:0;background:${grad}">
     <div class="silhouette" style="left:${left}%;top:${top}%;width:${size}px;height:${size}px;color:#3a4d5e">${icon(ic)}</div>
   </div>`;
 }
@@ -152,7 +155,7 @@ function viewDashboard(){
     <div class="view-head">
       <div>
         <h2>Central Operacional</h2>
-        <div class="view-sub">Condomínio Vista Real · visão consolidada de câmeras, eventos e investigações ativas</div>
+        <div class="view-sub">Shopping Metrópole · visão consolidada de câmeras, eventos e investigações ativas</div>
       </div>
       <div class="view-head-actions">
         <button class="btn ghost" data-action="nav" data-view="relatorios">${icon('file')} Relatórios</button>
@@ -239,7 +242,7 @@ function viewDashboard(){
       <div class="panel-body">
         <div class="search-box" style="max-width:none">
           ${icon('search','search-ic')}
-          <input id="dash-search-input" type="text" placeholder="O que você está procurando? Ex.: veículo prata saindo pelo portão B após as 22h" />
+          <input id="dash-search-input" type="text" placeholder="O que você está procurando? Ex.: pessoa de camiseta vermelha no átrio após as 14h" />
           <button class="mic-btn" title="Pesquisar por voz">${icon('mic')}</button>
           <button class="btn accent sm" data-action="run-dash-search">Buscar</button>
         </div>
@@ -265,7 +268,7 @@ function viewInvestigacoes(){
       <p>Descreva o alvo em linguagem natural — sem precisar conhecer filtros técnicos.</p>
       <div class="search-box">
         ${icon('search','search-ic')}
-        <input id="main-search-input" type="text" value="${esc(q)}" placeholder="Ex.: veículo prata saindo pelo portão B após as 22h" />
+        <input id="main-search-input" type="text" value="${esc(q)}" placeholder="Ex.: pessoa de camiseta vermelha no átrio após as 14h" />
         <button class="mic-btn" id="mic-toggle" title="Pesquisar por voz">${icon('mic')}</button>
         <button class="btn accent" data-action="run-search">${icon('search')} Buscar</button>
       </div>
@@ -352,7 +355,7 @@ function viewInvestigationDetail(){
       <button class="back-btn" data-action="nav" data-view="investigacoes">${icon('chevronLeft')}</button>
       <div>
         <div style="display:flex;align-items:center;gap:10px">
-          <span class="inv-title">Investigação — Veículo Prata, Portão B</span>
+          <span class="inv-title">Investigação — Pessoa de Camiseta Vermelha, Área de Serviço</span>
           <span class="status-pill active">Em Andamento</span>
         </div>
         <div class="inv-id">EVENTO #A1B2C3 · aberta por Mariana Lania · ${fmtDateTime('2026-09-15T09:41:12')}</div>
@@ -439,11 +442,11 @@ function viewInvestigationDetail(){
           <div class="panel-body">
             <div class="profile-photo">${sceneFeedHTML(cam, 'profile'+idx)}</div>
             <div class="profile-fields">
-              <div class="pf-item"><label>Tipo</label><div class="pf-val">Veículo</div></div>
-              <div class="pf-item"><label>Cor</label><div class="pf-val">Prata</div></div>
-              <div class="pf-item"><label>Categoria</label><div class="pf-val">Sedã, 4 portas</div></div>
-              <div class="pf-item"><label>Confiança OCR</label><div class="pf-val" style="color:var(--sig-online)">94%</div></div>
-              <div class="pf-item span2"><label>Placa (OCR)</label><div class="pf-plate">ABC1D23</div></div>
+              <div class="pf-item"><label>Tipo</label><div class="pf-val">Pessoa</div></div>
+              <div class="pf-item"><label>Vestimenta</label><div class="pf-val">Camiseta vermelha</div></div>
+              <div class="pf-item"><label>Características</label><div class="pf-val">Adulto, bolsa a tiracolo</div></div>
+              <div class="pf-item"><label>Confiança Re-ID</label><div class="pf-val" style="color:var(--sig-online)">94%</div></div>
+              <div class="pf-item span2"><label>Assinatura Visual</label><div class="pf-plate">RID-4471</div></div>
               <div class="pf-item span2"><label>Primeira Detecção</label><div class="pf-val">${TRACK_PATH[0].camera} · ${TRACK_PATH[0].time}</div></div>
               <div class="pf-item span2"><label>Última Detecção</label><div class="pf-val">${TRACK_PATH[TRACK_PATH.length-1].camera} · ${TRACK_PATH[TRACK_PATH.length-1].time}</div></div>
             </div>
@@ -678,7 +681,7 @@ function settingsTabBody(tab){
       <div class="settings-section">
         <h4>Cadastro de Câmera</h4>
         <div class="s-desc">Conexão via protocolos abertos ONVIF/RTSP, sem necessidade de troca de hardware.</div>
-        <div class="filter-field" style="margin-bottom:10px"><label>Nome</label><input type="text" placeholder="Ex.: Portão Principal" style="background:var(--void);border:1px solid var(--border-strong);border-radius:6px;padding:9px;color:var(--text-hi);font-family:var(--f-mono);width:100%"></div>
+        <div class="filter-field" style="margin-bottom:10px"><label>Nome</label><input type="text" placeholder="Ex.: Entrada Principal Sul" style="background:var(--void);border:1px solid var(--border-strong);border-radius:6px;padding:9px;color:var(--text-hi);font-family:var(--f-mono);width:100%"></div>
         <div class="filter-field" style="margin-bottom:10px"><label>URL RTSP</label><input type="text" placeholder="rtsp://192.168.0.10:554/stream1" style="background:var(--void);border:1px solid var(--border-strong);border-radius:6px;padding:9px;color:var(--text-hi);font-family:var(--f-mono);width:100%"></div>
         <button class="btn accent sm">${icon('plus')} Adicionar Câmera</button>
       </div>
