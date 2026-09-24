@@ -28,7 +28,15 @@ const SCENE_CLASS_LABEL = { entrance:'PESSOA', corridor:'PESSOA', foodcourt:'PES
 function sceneFeedHTML(cam, seed){
   // Câmera com imagem: mostra o quadro "gravado" (foto) em vez do gradiente
   if(cam.img){
-    return `<div class="scene" style="position:absolute;inset:0;background:#05080c url('${cam.img}') center/cover no-repeat"></div>`;
+    // Efeito "ao vivo": cada câmera começa o movimento num ponto diferente,
+    // para as 12 não se moverem todas iguais ao mesmo tempo.
+    const drift   = (seededPct(cam.id,'drift')*20).toFixed(1);
+    const flicker = (seededPct(cam.id,'flick')*6).toFixed(1);
+    return `<div class="scene-live">
+      <div class="scene photo" style="position:absolute;inset:0;background:#05080c url('${cam.img}') center/cover no-repeat;animation-delay:-${drift}s"></div>
+      <div class="scene-grain"></div>
+      <div class="scene-flicker" style="animation-delay:-${flicker}s"></div>
+    </div>`;
   }
   const grad = SCENE_GRADIENT[cam.scene] || SCENE_GRADIENT.corridor;
   const left = 18 + seededPct(seed,'l')*54;
@@ -786,7 +794,7 @@ function updateClocks(){
   const d = ['DOM','SEG','TER','QUA','QUI','SEX','SÁB'][now.getDay()]+' '+pad2(now.getDate())+'/'+pad2(now.getMonth()+1)+'/'+now.getFullYear();
   const ct = document.getElementById('topbar-clock-time'); if(ct) ct.textContent = t;
   const cd = document.getElementById('topbar-clock-date'); if(cd) cd.textContent = d;
-  document.querySelectorAll('.live-clock-mini').forEach(el=> el.textContent = t.slice(0,5));
+  document.querySelectorAll('.live-clock-mini').forEach(el=> el.textContent = t);
 }
 
 function startTickers(){

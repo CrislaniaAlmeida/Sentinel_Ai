@@ -689,3 +689,48 @@ nav.side-nav{ flex:1; overflow-y:auto; padding:14px 10px; display:flex; flex-dir
   .view{ padding:16px 14px 30px; }
   .kpi-strip{ grid-template-columns: 1fr 1fr; }
 }
+
+/* ============================================================
+   Efeito "ao vivo" nas câmeras com foto
+   As fotos são paradas; estes efeitos imitam uma câmera real:
+   - cam-drift:   zoom e deslocamento bem lentos (câmera "respirando")
+   - cam-grain:   granulado/ruído de sensor que tremula sem parar
+   - cam-flicker: pequenas oscilações de brilho
+   ============================================================ */
+.scene-live{ position:absolute; inset:0; overflow:hidden; }
+.scene.photo{
+  animation: cam-drift 22s ease-in-out infinite alternate;
+  will-change: transform;
+}
+@keyframes cam-drift{
+  from{ transform: scale(1.05) translate(-1.5%, -1%); }
+  to  { transform: scale(1.12) translate(1.5%, 1%); }
+}
+.scene-grain{
+  position:absolute; inset:-50%; pointer-events:none;
+  opacity:.16; mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation: cam-grain .5s steps(4) infinite;
+}
+@keyframes cam-grain{
+  0%  { transform: translate(0,0); }
+  25% { transform: translate(-7%, 4%); }
+  50% { transform: translate(5%, -6%); }
+  75% { transform: translate(-3%, -2%); }
+  100%{ transform: translate(0,0); }
+}
+.scene-flicker{
+  position:absolute; inset:0; pointer-events:none; background:#000;
+  opacity:0; animation: cam-flicker 6s steps(1) infinite;
+}
+@keyframes cam-flicker{
+  0%  { opacity:0; }
+  46% { opacity:.07; }
+  48% { opacity:0; }
+  71% { opacity:.04; }
+  73% { opacity:0; }
+}
+/* Quem configurou o computador para "reduzir movimento" não vê as animações */
+@media (prefers-reduced-motion: reduce){
+  .scene.photo, .scene-grain, .scene-flicker{ animation:none; }
+}
