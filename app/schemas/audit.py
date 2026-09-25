@@ -6,10 +6,12 @@ from pydantic import BaseModel
 class LogAuditoriaOut(BaseModel):
     id: uuid.UUID
     usuario_id: uuid.UUID
-    acao: str 
+    usuario_nome: str | None = None
+    usuario_email: str | None = None
+    acao: str
     entidade_afetada: str | None
     ip_origem: str | None
     timestamp: datetime
 
-    class Config: 
+    class Config:
         from_attributes = True

@@ -139,6 +139,7 @@ const state = {
   timelineIndex: 5,
   settingsTab: 'privacidade',
   tickers: {},
+  auditoria: { status:'ocioso', logs:[], erro:null },
 };
 
 function clearTickers(){ Object.values(state.tickers).forEach(clearInterval); state.tickers = {}; }
@@ -593,31 +594,85 @@ function viewRelatorios(){
 }
 
 /* ---------------- view: AUDITORIA ---------------- */
+// Nomes amigáveis para as ações que o backend grava
+const ACAO_LABEL = {
+  login:'login', criar_camera:'cadastrar_camera', criar_usuario:'criar_usuario',
+  busca_investigacao:'busca_evento', gerar_relatorio:'gerar_relatorio',
+};
+
+// O backend grava a hora em UTC, mas sem o "Z" no final.
+// Sem ele, o navegador acharia que já é o horário local e mostraria 3h a mais.
+function utc(ts){ return /Z$|[+-]\d\d:\d\d$/.test(ts) ? ts : ts + 'Z'; }
+
+async function carregarAuditoria(){
+  state.auditoria = { status:'carregando', logs:[], erro:null };
+  if(state.view==='auditoria') render();
+  try {
+    const resposta = await fetch(`${API_URL}/api/auditoria/logs`, {
+      headers: { Authorization: `Bearer ${authToken}` },
+    });
+    if(resposta.status === 403) throw new Error('Somente administradores podem ver a trilha de auditoria.');
+    if(!resposta.ok) throw new Error('Não foi possível carregar os registros (erro ' + resposta.status + ').');
+    const logs = await resposta.json();
+    state.auditoria = { status:'pronto', logs, erro:null };
+  } catch (erro) {
+    state.auditoria = { status:'erro', logs:[], erro: erro.message || 'Falha de conexão com o servidor.' };
+  }
+  if(state.view==='auditoria') render();
+}
+
+function linhasAuditoria(){
+  const a = state.auditoria;
+  // Sem login real (modo demonstração): mostra os dados de exemplo
+  if(!authToken){
+    return AUDIT_LOGS.map(l => `<tr>
+      <td class="hi">${esc(l.user)}</td>
+      <td><span class="badge intel">${esc(l.action)}</span></td>
+      <td>${esc(l.resource)}</td>
+      <td class="mono">${fmtDateTime(l.ts)}</td>
+      <td class="mono">${l.ip}</td>
+    </tr>`).join('');
+  }
+  if(a.status==='ocioso' || a.status==='carregando'){
+    return `<tr><td colspan="5" style="text-align:center;padding:28px">Carregando registros do servidor...</td></tr>`;
+  }
+  if(a.status==='erro'){
+    return `<tr><td colspan="5" style="text-align:center;padding:28px;color:var(--sig-alert,#f87171)">${esc(a.erro)}</td></tr>`;
+  }
+  if(a.logs.length===0){
+    return `<tr><td colspan="5" style="text-align:center;padding:28px">Nenhum registro encontrado.</td></tr>`;
+  }
+  return a.logs.map(l => `<tr>
+    <td class="hi" title="${esc(l.usuario_email || '')}">${esc(l.usuario_nome || l.usuario_email || '—')}</td>
+    <td><span class="badge intel">${esc(ACAO_LABEL[l.acao] || l.acao)}</span></td>
+    <td class="mono" title="${esc(l.entidade_afetada || '')}">${l.entidade_afetada ? esc(l.entidade_afetada.slice(0,8)) + '…' : '—'}</td>
+    <td class="mono">${fmtDateTime(utc(l.timestamp))}</td>
+    <td class="mono">${esc(l.ip_origem || '—')}</td>
+  </tr>`).join('');
+}
+
 function viewAuditoria(){
+  // Primeira vez que abre a tela após o login: busca no backend
+  if(authToken && state.auditoria.status==='ocioso') setTimeout(carregarAuditoria, 0);
+
+  const total = authToken
+    ? (state.auditoria.status==='pronto' ? `${state.auditoria.logs.length} registros reais do banco de dados` : 'Dados em tempo real do servidor')
+    : 'Modo demonstração · dados de exemplo';
+
   return `
   <div class="view">
     <div class="view-head">
-      <div><h2>Trilha de Auditoria</h2><div class="view-sub">Registro append-only de toda ação sensível do sistema</div></div>
-      <div class="view-head-actions"><button class="btn ghost sm">${icon('download')} Exportar CSV</button></div>
+      <div><h2>Trilha de Auditoria</h2><div class="view-sub">Registro append-only de toda ação sensível do sistema · ${total}</div></div>
+      <div class="view-head-actions">
+        ${authToken ? `<button class="btn ghost sm" data-action="refresh-audit">${icon('clock')} Atualizar</button>` : ''}
+        <button class="btn ghost sm">${icon('download')} Exportar CSV</button>
+      </div>
     </div>
     <div class="panel">
-      <div class="table-toolbar">
-        <div class="filter-field"><label>Usuário</label><select><option>Todos</option>${USERS.map(u=>`<option>${u.name}</option>`).join('')}</select></div>
-        <div class="filter-field"><label>Ação</label><select><option>Todas</option><option>busca_evento</option><option>exportar_relatorio</option><option>login</option><option>alterar_config</option></select></div>
-        <div class="filter-field"><label>Período</label><select><option>7 dias</option><option>30 dias</option></select></div>
-      </div>
       <div class="table-wrap">
         <table class="data-table">
           <thead><tr><th>Usuário</th><th>Ação</th><th>Recurso</th><th>Data/Hora</th><th>IP de Origem</th></tr></thead>
-          <tbody>
-            ${AUDIT_LOGS.map(l => `<tr>
-              <td class="hi">${esc(l.user)}</td>
-              <td><span class="badge intel">${esc(l.action)}</span></td>
-              <td>${esc(l.resource)}</td>
-              <td class="mono">${fmtDateTime(l.ts)}</td>
-              <td class="mono">${l.ip}</td>
-            </tr>`).join('')}
-          </tbody>
+          <tbody>${linhasAuditoria()}</tbody>
         </table>
       </div>
     </div>
@@ -749,6 +804,8 @@ function wireDynamicHandlers(){
     state.searchQuery = input ? input.value : state.searchQuery;
     navigate('investigacoes');
   };
+  const refreshAudit = document.querySelector('[data-action="refresh-audit"]');
+  if(refreshAudit) refreshAudit.addEventListener('click', carregarAuditoria);
   const el1 = document.querySelector('[data-action="run-search"]'); if(el1) el1.addEventListener('click', runSearch);
   const dashRun = document.querySelector('[data-action="run-dash-search"]');
   if(dashRun) dashRun.addEventListener('click', ()=>{
@@ -838,6 +895,8 @@ function initSidebar(){
   expandBtn.addEventListener('click', ()=>{ state.sidebarCollapsed = false; applyCollapsed(); });
   document.getElementById('logout-btn').addEventListener('click', ()=>{
     clearTickers();
+    authToken = null;
+    state.auditoria = { status:'ocioso', logs:[], erro:null };
     document.getElementById('app-shell').style.display = 'none';
     document.getElementById('login-screen').style.display = 'flex';
   });
@@ -905,6 +964,7 @@ function initLogin(){
     try {
       const token = await fazerLogin(email, senha);
       authToken = token;
+      state.auditoria = { status:'ocioso', logs:[], erro:null };
       const usuario = await buscarUsuarioLogado(token);
       atualizarInterfaceUsuario(usuario);
       entrar();
