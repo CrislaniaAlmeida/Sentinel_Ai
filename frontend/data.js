@@ -24,6 +24,8 @@ const CAMERAS = [
   { id:'CAM-10', name:'Entrada Principal Sul',      loc:'Piso L1 · Acesso Sul',    x:300, y:470, status:'online',      scene:'entrance',  ai:true,  img:'img/cameras/cam-10.jpg', video:'video/cameras/cam-10.mp4' },
   { id:'CAM-11', name:'Praça de Alimentação Sul',   loc:'Piso L2 · Ala Sul',       x:390, y:190, status:'online',      scene:'foodcourt', ai:false, img:'img/cameras/cam-11.jpg', video:'video/cameras/cam-11.mp4' },
   { id:'CAM-12', name:'Área de Serviço',            loc:'Elevador de Carga · L1',  x:150, y:180, status:'alert',       scene:'service',   ai:true,  img:'img/cameras/cam-12.jpg', video:'video/cameras/cam-12.mp4' },
+  { id:'DEL-01', name:'Rodovia DE 1 · Milford Neck Rd', loc:'Delaware, EUA', x:0, y:0, status:'online', scene:'parking', ai:false, externa:true,
+    hls:'https://video.deldot.gov:443/live/KCAM001.stream/playlist.m3u8', credito:'DelDOT — Delaware Department of Transportation' },
 ];
 
 const RESULTS = [

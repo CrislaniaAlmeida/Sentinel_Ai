@@ -26,6 +26,15 @@ const SCENE_ICON = { entrance:'walk', corridor:'walk', foodcourt:'walk', parking
 const SCENE_CLASS_LABEL = { entrance:'PESSOA', corridor:'PESSOA', foodcourt:'PESSOA', parking:'VEÍCULO', service:'PESSOA' };
 
 function sceneFeedHTML(cam, seed){
+  // Câmera pública com vídeo ao vivo (HLS). O endereço fica em data-hls,
+  // e a função startHlsPlayers() liga o player depois que a tela é desenhada.
+  if(cam.hls){
+    return `<div class="scene-live">
+      <video class="scene video" data-hls="${cam.hls}" autoplay muted playsinline
+        style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#05080c"></video>
+      <div style="position:absolute;right:8px;bottom:30px;font-size:10px;padding:2px 6px;background:rgba(4,7,10,.7);color:#9fb2c0;border-radius:3px">Fonte: ${esc(cam.credito)}</div>
+    </div>`;
+  }
   // Câmera com imagem: mostra o quadro "gravado" (foto) em vez do gradiente
   if(cam.video){
     // Vídeo em loop, sem som. "playsinline" evita que o celular abra em tela cheia;
@@ -115,7 +124,7 @@ function buildOperationalMap(opts){
     <text x="${z.x+10}" y="${z.y+18}" fill="var(--text-faint)" font-family="JetBrains Mono, monospace" font-size="9" letter-spacing="1">${z.label}</text>
   `).join('');
 
-  const camsSvg = CAMERAS.map(c => {
+  const camsSvg = CAMERAS.filter(c => !c.externa).map(c => {
     const col = statusColorVar(c.status);
     const pulse = c.status==='online' ? `<circle cx="${c.x}" cy="${c.y}" r="9" fill="none" stroke="${col}" stroke-width="1.4" opacity=".55" class="map-pulse"/>` : '';
     return `<g class="map-cam-node" data-cam="${c.id}" style="cursor:pointer">
@@ -773,6 +782,26 @@ function settingsTabBody(tab){
     </div>`;
 }
 
+/* ---------------- vídeo ao vivo (HLS) ---------------- */
+let hlsPlayers = [];
+
+function startHlsPlayers(){
+  // Fecha os players da tela anterior, para não deixar conexões abertas
+  hlsPlayers.forEach(p => p.destroy());
+  hlsPlayers = [];
+  document.querySelectorAll('video[data-hls]').forEach(video => {
+    const url = video.dataset.hls;
+    if(window.Hls && Hls.isSupported()){
+      const hls = new Hls();
+      hls.loadSource(url);
+      hls.attachMedia(video);
+      hlsPlayers.push(hls);
+    } else if(video.canPlayType('application/vnd.apple.mpegurl')){
+      video.src = url;
+    }
+  });
+}
+
 /* ---------------- render dispatch ---------------- */
 function render(){
   const root = document.getElementById('view-root');
@@ -790,6 +819,7 @@ function render(){
   root.innerHTML = (fns[state.view] || viewDashboard)();
   wireDynamicHandlers();
   startTickers();
+  startHlsPlayers();
 }
 
 /* ---------------- interaction wiring ---------------- */
