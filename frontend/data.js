@@ -6,22 +6,24 @@
 
 const SCENES = ['entrance','corridor','foodcourt','parking','service'];
 
-/* img: quadro fixo gerado por IA (Shopping Metrópole, cenário fictício).
-   Ficam em frontend/img/cameras/. Se uma câmera não tiver "img",
-   o app volta a desenhar o gradiente antigo. */
+/* img:   quadro fixo gerado por IA (Shopping Metrópole, cenário fictício),
+          em frontend/img/cameras/.
+   video: trecho em loop gerado por IA a partir do mesmo mosaico,
+          em frontend/video/cameras/.
+   Ordem de preferência: vídeo → foto → gradiente antigo. */
 const CAMERAS = [
-  { id:'CAM-01', name:'Entrada Norte',              loc:'Piso L1 · Acesso Norte',  x:120, y:250, status:'online',      scene:'entrance',  ai:true,  img:'img/cameras/cam-01.jpg' },
-  { id:'CAM-02', name:'Átrio Central',              loc:'Piso L1 · Centro',        x:640, y:90,  status:'online',      scene:'corridor',  ai:true,  img:'img/cameras/cam-02.jpg' },
-  { id:'CAM-03', name:'Praça de Alimentação Norte', loc:'Piso L2 · Ala Norte',     x:210, y:400, status:'online',      scene:'foodcourt', ai:true,  img:'img/cameras/cam-03.jpg' },
-  { id:'CAM-04', name:'Corredor Oeste',             loc:'Piso L1 · Ala Oeste',     x:560, y:360, status:'online',      scene:'corridor',  ai:true,  img:'img/cameras/cam-04.jpg' },
-  { id:'CAM-05', name:'Escada Rolante',             loc:'Piso L1 → L2',            x:340, y:150, status:'online',      scene:'corridor',  ai:false, img:'img/cameras/cam-05.jpg' },
-  { id:'CAM-06', name:'Foyer do Cinema',            loc:'Piso L3',                 x:400, y:260, status:'online',      scene:'entrance',  ai:false, img:'img/cameras/cam-06.jpg' },
-  { id:'CAM-07', name:'Estacionamento G2 Sul',      loc:'Subsolo G2',              x:490, y:440, status:'online',      scene:'parking',   ai:true,  img:'img/cameras/cam-07.jpg' },
-  { id:'CAM-08', name:'Corredor Norte',             loc:'Piso L2 · Ala Norte',     x:60,  y:120, status:'offline',     scene:'corridor',  ai:false, img:'img/cameras/cam-08.jpg' },
-  { id:'CAM-09', name:'Acesso aos Sanitários',      loc:'Piso L1 · Ala Leste',     x:680, y:420, status:'maintenance', scene:'corridor',  ai:false, img:'img/cameras/cam-09.jpg' },
-  { id:'CAM-10', name:'Entrada Principal Sul',      loc:'Piso L1 · Acesso Sul',    x:300, y:470, status:'online',      scene:'entrance',  ai:true,  img:'img/cameras/cam-10.jpg' },
-  { id:'CAM-11', name:'Praça de Alimentação Sul',   loc:'Piso L2 · Ala Sul',       x:390, y:190, status:'online',      scene:'foodcourt', ai:false, img:'img/cameras/cam-11.jpg' },
-  { id:'CAM-12', name:'Área de Serviço',            loc:'Elevador de Carga · L1',  x:150, y:180, status:'alert',       scene:'service',   ai:true,  img:'img/cameras/cam-12.jpg' },
+  { id:'CAM-01', name:'Entrada Norte',              loc:'Piso L1 · Acesso Norte',  x:120, y:250, status:'online',      scene:'entrance',  ai:true,  img:'img/cameras/cam-01.jpg', video:'video/cameras/cam-01.mp4' },
+  { id:'CAM-02', name:'Átrio Central',              loc:'Piso L1 · Centro',        x:640, y:90,  status:'online',      scene:'corridor',  ai:true,  img:'img/cameras/cam-02.jpg', video:'video/cameras/cam-02.mp4' },
+  { id:'CAM-03', name:'Praça de Alimentação Norte', loc:'Piso L2 · Ala Norte',     x:210, y:400, status:'online',      scene:'foodcourt', ai:true,  img:'img/cameras/cam-03.jpg', video:'video/cameras/cam-03.mp4' },
+  { id:'CAM-04', name:'Corredor Oeste',             loc:'Piso L1 · Ala Oeste',     x:560, y:360, status:'online',      scene:'corridor',  ai:true,  img:'img/cameras/cam-04.jpg', video:'video/cameras/cam-04.mp4' },
+  { id:'CAM-05', name:'Escada Rolante',             loc:'Piso L1 → L2',            x:340, y:150, status:'online',      scene:'corridor',  ai:false, img:'img/cameras/cam-05.jpg', video:'video/cameras/cam-05.mp4' },
+  { id:'CAM-06', name:'Foyer do Cinema',            loc:'Piso L3',                 x:400, y:260, status:'online',      scene:'entrance',  ai:false, img:'img/cameras/cam-06.jpg', video:'video/cameras/cam-06.mp4' },
+  { id:'CAM-07', name:'Estacionamento G2 Sul',      loc:'Subsolo G2',              x:490, y:440, status:'online',      scene:'parking',   ai:true,  img:'img/cameras/cam-07.jpg', video:'video/cameras/cam-07.mp4' },
+  { id:'CAM-08', name:'Corredor Norte',             loc:'Piso L2 · Ala Norte',     x:60,  y:120, status:'offline',     scene:'corridor',  ai:false, img:'img/cameras/cam-08.jpg', video:'video/cameras/cam-08.mp4' },
+  { id:'CAM-09', name:'Acesso aos Sanitários',      loc:'Piso L1 · Ala Leste',     x:680, y:420, status:'maintenance', scene:'corridor',  ai:false, img:'img/cameras/cam-09.jpg', video:'video/cameras/cam-09.mp4' },
+  { id:'CAM-10', name:'Entrada Principal Sul',      loc:'Piso L1 · Acesso Sul',    x:300, y:470, status:'online',      scene:'entrance',  ai:true,  img:'img/cameras/cam-10.jpg', video:'video/cameras/cam-10.mp4' },
+  { id:'CAM-11', name:'Praça de Alimentação Sul',   loc:'Piso L2 · Ala Sul',       x:390, y:190, status:'online',      scene:'foodcourt', ai:false, img:'img/cameras/cam-11.jpg', video:'video/cameras/cam-11.mp4' },
+  { id:'CAM-12', name:'Área de Serviço',            loc:'Elevador de Carga · L1',  x:150, y:180, status:'alert',       scene:'service',   ai:true,  img:'img/cameras/cam-12.jpg', video:'video/cameras/cam-12.mp4' },
 ];
 
 const RESULTS = [

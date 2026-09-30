@@ -27,6 +27,16 @@ const SCENE_CLASS_LABEL = { entrance:'PESSOA', corridor:'PESSOA', foodcourt:'PES
 
 function sceneFeedHTML(cam, seed){
   // Câmera com imagem: mostra o quadro "gravado" (foto) em vez do gradiente
+  if(cam.video){
+    // Vídeo em loop, sem som. "playsinline" evita que o celular abra em tela cheia;
+    // "poster" mostra a foto enquanto o vídeo carrega.
+    return `<div class="scene-live">
+      <video class="scene video" src="${cam.video}" ${cam.img ? `poster="${cam.img}"` : ''}
+        autoplay muted loop playsinline preload="auto"
+        style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#05080c"></video>
+      <div class="scene-grain"></div>
+    </div>`;
+  }
   if(cam.img){
     // Efeito "ao vivo": cada câmera começa o movimento num ponto diferente,
     // para as 12 não se moverem todas iguais ao mesmo tempo.
