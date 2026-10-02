@@ -79,7 +79,7 @@ function camTileHTML(cam, opts){
   const confPct = 82 + Math.round(seededPct(cam.id,'conf')*15);
   const bx = 30 + seededPct(cam.id,'bx')*30, by = 26 + seededPct(cam.id,'by')*28;
   const bw = 16 + seededPct(cam.id,'bw')*10, bh = 22 + seededPct(cam.id,'bh')*14;
-  return `<div class="${cls.join(' ')}" data-cam="${cam.id}" role="button" tabindex="0" aria-label="${esc(cam.name)}">
+  return `<div class="${cls.join(' ')}" data-cam="${cam.id}" role="button" tabindex="0" aria-label="${esc(cam.name)}" title="Clique para ampliar">
     <div class="cam-feed">
       ${offline ? '' : sceneFeedHTML(cam, cam.id)}
       ${offline ? '' : '<div class="cam-noise"></div>'}
@@ -802,8 +802,89 @@ function startHlsPlayers(){
   });
 }
 
+/* ---------------- câmera em tela grande ---------------- */
+// Guarda a câmera aberta no momento: a janela, o player ao vivo (se houver) e o relógio
+let cameraAberta = null;
+
+function abrirCamera(camId){
+  const cam = CAMERAS.find(c => c.id === camId);
+  if(!cam) return;
+  fecharCamera();
+
+  const offline = cam.status === 'offline' || cam.status === 'maintenance';
+  const statusTexto  = { online:'ONLINE', alert:'ALERTA', offline:'OFFLINE', maintenance:'MANUTENÇÃO' }[cam.status] || cam.status;
+  const statusClasse = { online:'online', alert:'critical', offline:'offline', maintenance:'warn' }[cam.status] || 'intel';
+
+  const janela = document.createElement('div');
+  janela.id = 'camera-aberta';
+  janela.style.cssText = 'position:fixed;inset:0;z-index:1000;background:rgba(2,4,7,.92);display:flex;align-items:center;justify-content:center;padding:24px;';
+  janela.innerHTML = `
+    <div style="width:min(1280px,100%);background:var(--panel);border:1px solid var(--border-strong);border-radius:12px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.6)">
+      <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border)">
+        <span class="mono" style="font-weight:700;color:var(--text-hi)">${cam.id}</span>
+        <div style="flex:1;min-width:0">
+          <div style="color:var(--text-hi);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(cam.name)}</div>
+          <div style="color:var(--text-lo);font-size:12px">${esc(cam.loc)}</div>
+        </div>
+        <span class="badge ${statusClasse}">${statusTexto}</span>
+        ${offline ? '' : `<span class="mono" style="color:var(--sig-critical);font-size:12px">● REC · <span id="camera-aberta-relogio">--:--:--</span></span>`}
+        <button class="btn ghost sm" id="camera-aberta-fechar" aria-label="Fechar" title="Fechar (Esc)">${icon('close')}</button>
+      </div>
+      <div style="position:relative;width:100%;height:min(calc(100vh - 170px), calc((min(1280px, 100vw) - 48px) * 0.5625));background:#000">
+        ${offline
+          ? `<div class="cam-offline-msg" style="font-size:14px">${icon('wifiOff')}<span>${cam.status==='maintenance' ? 'EM MANUTENÇÃO' : 'SEM SINAL'}</span></div>`
+          : sceneFeedHTML(cam, cam.id)}
+      </div>
+      <div style="padding:8px 16px;color:var(--text-lo);font-size:12px">Clique fora da imagem ou aperte Esc para voltar à grade</div>
+    </div>`;
+  document.body.appendChild(janela);
+
+  // Na tela grande, mostra a imagem inteira (sem cortar as laterais) e sem o zoom lento
+  janela.querySelectorAll('video').forEach(v => { v.style.objectFit = 'contain'; v.play().catch(()=>{}); });
+  janela.querySelectorAll('.scene.photo').forEach(f => { f.style.backgroundSize = 'contain'; f.style.animation = 'none'; });
+
+  // Câmera ao vivo (HLS): este player é só da janela, separado dos players da grade
+  let hls = null;
+  const videoHls = janela.querySelector('video[data-hls]');
+  if(videoHls){
+    if(window.Hls && Hls.isSupported()){
+      hls = new Hls();
+      hls.loadSource(videoHls.dataset.hls);
+      hls.attachMedia(videoHls);
+    } else if(videoHls.canPlayType('application/vnd.apple.mpegurl')){
+      videoHls.src = videoHls.dataset.hls;
+    }
+  }
+
+  // Relógio da câmera, com segundos
+  const atualizarRelogio = () => {
+    const el = document.getElementById('camera-aberta-relogio');
+    if(el) el.textContent = new Date().toLocaleTimeString('pt-BR');
+  };
+  atualizarRelogio();
+  const relogio = setInterval(atualizarRelogio, 1000);
+
+  // Fechar pelo X ou clicando no fundo escuro (fora da janela)
+  janela.querySelector('#camera-aberta-fechar').addEventListener('click', fecharCamera);
+  janela.addEventListener('click', e => { if(e.target === janela) fecharCamera(); });
+
+  cameraAberta = { janela, hls, relogio };
+}
+
+function fecharCamera(){
+  if(!cameraAberta) return;
+  if(cameraAberta.hls) cameraAberta.hls.destroy();   // encerra a conexão do vídeo ao vivo
+  clearInterval(cameraAberta.relogio);
+  cameraAberta.janela.remove();
+  cameraAberta = null;
+}
+
+// Tecla Esc fecha a câmera aberta
+document.addEventListener('keydown', e => { if(e.key === 'Escape') fecharCamera(); });
+
 /* ---------------- render dispatch ---------------- */
 function render(){
+  fecharCamera();   // se uma câmera estiver ampliada, fecha antes de trocar de tela
   const root = document.getElementById('view-root');
   const fns = {
     dashboard: viewDashboard,
@@ -873,8 +954,12 @@ function wireDynamicHandlers(){
     });
   });
   document.querySelectorAll('.cam-tile[data-cam]').forEach(el=>{
+    // Fora da investigação, clicar (ou apertar Enter) numa câmera abre ela em tela grande
     el.addEventListener('click', ()=>{
-      if(state.view!=='investigacao-detalhe') navigate('monitoramento');
+      if(state.view!=='investigacao-detalhe') abrirCamera(el.dataset.cam);
+    });
+    el.addEventListener('keydown', e=>{
+      if(e.key==='Enter' && state.view!=='investigacao-detalhe') abrirCamera(el.dataset.cam);
     });
   });
   const playToggle = document.getElementById('play-toggle');
