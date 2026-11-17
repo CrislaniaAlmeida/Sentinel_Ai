@@ -1027,7 +1027,7 @@ function initSidebar(){
   });
 }
 
-const API_URL = 'https://sentinelai-production-edf2.up.railway.app';
+const API_URL = 'https://sentinel-ai-2bqx.onrender.com';
 let authToken = null;
 
 async function fazerLogin(email, senha){
